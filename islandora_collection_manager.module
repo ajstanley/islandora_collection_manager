@@ -1,0 +1,27 @@
+<?php
+
+function islandora_collection_manager_islandora_tabs($content_models, $pid) {
+  module_load_include('inc', 'islandora_collection_manager', 'CollectionManagement');
+  $content_model_pids = array();
+  $tabset = array();
+  foreach ($content_models as $content_model) {
+    $content_model_pids[] = $content_model->pid;
+  }
+  if (in_array('islandora:collectionCModel', $content_model_pids)) {
+    $tabset['add_collection_tab'] = array(
+      '#type' => 'tabpage',
+      '#title' => t('Manage This Collection'),
+      '#content' => drupal_get_form('collection_management_form', $pid, $content_models),
+      '#selected' => FALSE,
+    );
+  }
+  return $tabset;
+}
+
+function islandora_collection_manager_perm() {
+  return array(
+    'manage collections',
+    'create batch process',
+    'delete entire collections',
+  );
+}
