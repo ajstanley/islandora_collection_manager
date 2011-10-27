@@ -34,6 +34,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
       $cm_options[$content_model->pid] = $cm_name;
     }
   }
+
   if (!empty($cm_options)) {
     $show_delete = TRUE;
   }
@@ -147,7 +148,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
     '#id' => 'add_cm'
   );
 
-  if ($show_delete) {
+  if (7 ==7) {
     $form['manage_collection_policy']['remove'] = array(
       '#title' => "Delete Content Model",
       '#type' => 'fieldset',
