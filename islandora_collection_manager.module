@@ -1,21 +1,14 @@
 <?php
 
-function islandora_collection_manager_islandora_tabs($content_models, $pid) {
-  module_load_include('inc', 'islandora_collection_manager', 'CollectionManagement');
-  $content_model_pids = array();
-  $tabset = array();
-  foreach ($content_models as $content_model) {
-    $content_model_pids[] = $content_model->pid;
-  }
-  if (in_array('islandora:collectionCModel', $content_model_pids)) {
-    $tabset['add_collection_tab'] = array(
-      '#type' => 'tabpage',
-      '#title' => t('Manage This Collection'),
-      '#content' => drupal_get_form('collection_management_form', $pid, $content_models),
-      '#selected' => FALSE,
-    );
-  }
-  return $tabset;
+function islandora_collection_manager_menu() {
+  $items = array();
+  $items['islandora/collection'] = array(
+    'title' => t('Collection Management'),
+    'page callback' => 'collection_management_wrapper',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('manage collections'),
+  );
+  return $items;
 }
 
 function islandora_collection_manager_perm() {
@@ -24,4 +17,36 @@ function islandora_collection_manager_perm() {
     'create batch process',
     'delete entire collections',
   );
+}
+
+function collection_management_wrapper($collection_pid) {
+  module_load_include('inc', 'fedora_repository', 'ObjectHelper');
+  module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
+  module_load_include('inc', 'fedora_repository', 'api/fedora_item');
+  $objectHelper = new ObjectHelper();
+  $content_models = $objectHelper->get_content_models_list($collection_pid);
+  return drupal_render(get_collection_management_content($content_models, $collection_pid));
+}
+
+function islandora_collection_manager_islandora_tabs($content_models, $pid) {
+  module_load_include('inc', 'islandora_collection_manager', 'CollectionManagement');
+  $content_model_pids = array();
+  $tabset = array();
+  foreach ($content_models as $content_model) {
+    $content_model_pids[] = $content_model->pid;
+  }
+  if (in_array('islandora:collectionCModel', $content_model_pids)) {
+    return get_collection_management_content($content_models, $pid);
+  }
+}
+
+function get_collection_management_content($content_models, $pid) {
+  module_load_include('inc', 'islandora_collection_manager', 'CollectionManagement');
+  $form['add_collection_tab'] = array(
+    '#type' => 'tabpage',
+    '#title' => t('Manage This Collection'),
+    '#content' => drupal_get_form('collection_management_form', $pid, $content_models),
+    '#selected' => FALSE,
+  );
+  return $form;
 }

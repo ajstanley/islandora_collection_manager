@@ -40,6 +40,11 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
 
 
   $content_models = get_content_models_as_option_array();
+  unset($content_models['islandora:collectionCModel']);
+  $form['banner'] = array(
+    '#type' => 'item',
+    '#value' => t("Manage $collection_name"),
+  );
   $form['child_creation'] = array(
     '#title' => "Create Child Collection",
     '#type' => 'fieldset',
@@ -86,7 +91,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
     '#type' => 'hidden',
     '#value' => $this_collection_pid,
   );
-  
+
   $form['collection_pid'] = array(
     '#type' => 'hidden',
     '#value' => $this_collection_pid,
@@ -118,11 +123,15 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
     '#collapsed' => $show_delete,
   );
 
+  $new_options = array();
+  if (is_array($content_models) && is_array($cm_options)) {
+    $new_options = array_diff_key($content_models, $cm_options);
+  }
 
   $form ['manage_collection_policy']['add']['content_model_to_add'] = array(
     '#title' => "Choose Content Model",
     '#type' => 'select',
-    '#options' => array_diff_key($content_models, $cm_options),
+    '#options' => $new_options,
     '#description' => t("Choose content model to add to this collection policy."),
   );
 
@@ -160,12 +169,15 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
       '#id' => 'remove_cm'
     );
   }
+
+
   $form['change_cmodel'] = array(
     '#title' => "Change Content Models",
     '#type' => 'fieldset',
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
+
   $form['change_cmodel']['titlebox'] = array(
     '#type' => 'item',
     '#value' => t("Change Content Models within $this_collection_pid"),
@@ -192,6 +204,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
     '#value' => t('Change Content Model Associations'),
     '#id' => 'change_model',
   );
+
   if (user_access('delete entire collections')) {
     $form['delete_collection'] = array(
       '#title' => "Permanently Delete objects in $collection_name",
