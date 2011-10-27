@@ -9,6 +9,7 @@
  */
 function collection_management_form(&$form_state, $this_collection_pid, $content_models) {
   module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
+  module_load_include('inc', 'fedora_repository', 'CollectionPolicy');
   $restricted = FALSE;
   if (variable_get('fedora_namespace_restriction_enforced', TRUE)) {
     $restricted = TRUE;
@@ -20,11 +21,16 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
       }
     }
   }
-  module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
-  module_load_include('inc', 'fedora_repository', 'CollectionPolicy');
+  $collection_policy = CollectionPolicy::loadFromCollection($this_collection_pid);
+  $supported_collection_models = $collection_policy->getContentModels();
+
   $item = new Fedora_Item($this_collection_pid);
   $collection_name = $item->objectProfile->objLabel;
   $new_content_models = get_content_models_as_option_array();
+  $current_models_in_policy = array();
+  foreach ($supported_collection_models as $supported_model){
+    $current_models_in_policy[] = $supported_model->pid;
+  }
   $cm_options = array();
   $name_mappings = array();
   foreach ($content_models as $content_model) {
@@ -35,7 +41,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
     }
   }
 
-  if (!empty($cm_options)) {
+  if (!empty($current_models_in_policy)) {
     $show_delete = TRUE;
   }
 
@@ -148,7 +154,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
     '#id' => 'add_cm'
   );
 
-  if (7 ==7) {
+  if (count($current_models_in_policy) > 0) {
     $form['manage_collection_policy']['remove'] = array(
       '#title' => "Delete Content Model",
       '#type' => 'fieldset',
@@ -159,7 +165,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
     $form ['manage_collection_policy']['remove']['content_models_to_remove'] = array(
       '#title' => "Choose Content Model to Remove",
       '#type' => 'checkboxes',
-      '#options' => $cm_options,
+      '#options' => $current_models_in_policy,
       '#description' => t("Choose content models to remove from this collection policy."),
     );
 
