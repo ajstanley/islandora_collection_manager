@@ -43,7 +43,6 @@ function islandora_collection_manager_islandora_tabs($content_models, $pid) {
   }
   module_load_include('inc', 'islandora_collection_manager', 'CollectionManagement');
   $content_model_pids = array();
-  $tabset = array();
   foreach ($content_models as $content_model) {
     $content_model_pids[] = $content_model->pid;
   }
