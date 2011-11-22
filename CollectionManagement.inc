@@ -22,20 +22,23 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
     }
   }
   $collection_policy = CollectionPolicy::loadFromCollection($this_collection_pid);
-  if ($collection_policy) {
 
+  if ($collection_policy) {
     $supported_collection_models = $collection_policy->getContentModels();
   }
   $collection_namespace = substr($this_collection_pid, 0, strpos($this_collection_pid, ":"));
+
   $represented_content_models = get_represented_content_models($this_collection_pid);
   $item = new Fedora_Item($this_collection_pid);
   $collection_name = $item->objectProfile->objLabel;
   $new_content_models = get_content_models_as_option_array();
   $current_models_in_policy = array();
+
   if ($supported_collection_models) {
     foreach ($supported_collection_models as $supported_model) {
       $current_models_in_policy[] = $supported_model->pid;
     }
+
   }
   $cm_options = array();
   $name_mappings = array();
@@ -259,6 +262,7 @@ function collection_management_form_validate($form, &$form_state) {
     $needs_model = TRUE;
     foreach ($form_state['values']['content_models'] as $key => $value) {
       if (is_string($value)) {
+
         $needs_model = FALSE;
       }
     }
@@ -277,14 +281,18 @@ function collection_management_form_validate($form, &$form_state) {
     }
   }
   if ($form_state['clicked_button']['#id'] == 'add_cm') {
-   $name_parts = explode(":", $form_state['values']['new_cp_namespace']);
 
+   $name_parts = explode(":", $form_state['values']['new_cp_namespace']);
     $namespace = $name_parts[0] . ":1";
     if (!valid_pid($namespace)) {
       form_set_error('new_cp_namespace', t("Namespace must be valid. Click on 'Manage This Collection' tab and enter new value."));
+
       return;
     }
     $form_state['values']['new_cp_namespace'] = $namespace;
+  }
+  if ($form_state['clicked_button']['#id'] == 'add_class') {
+
   }
   if ($form_state['clicked_button']['#id'] == 'add_class') {
 
