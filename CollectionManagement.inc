@@ -22,14 +22,20 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
     }
   }
   $collection_policy = CollectionPolicy::loadFromCollection($this_collection_pid);
-  $supported_collection_models = $collection_policy->getContentModels();
+  if ($collection_policy) {
 
+    $supported_collection_models = $collection_policy->getContentModels();
+  }
+  $collection_namespace = substr($this_collection_pid, 0, strpos($this_collection_pid, ":"));
+  $represented_content_models = get_represented_content_models($this_collection_pid);
   $item = new Fedora_Item($this_collection_pid);
   $collection_name = $item->objectProfile->objLabel;
   $new_content_models = get_content_models_as_option_array();
   $current_models_in_policy = array();
-  foreach ($supported_collection_models as $supported_model){
-    $current_models_in_policy[] = $supported_model->pid;
+  if ($supported_collection_models) {
+    foreach ($supported_collection_models as $supported_model) {
+      $current_models_in_policy[] = $supported_model->pid;
+    }
   }
   $cm_options = array();
   $name_mappings = array();
@@ -74,6 +80,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
     '#title' => "Collection PID",
     '#type' => 'textfield',
     '#size' => 15,
+    '#default_value' => Fedora_Item::get_next_PID_in_namespace($collection_namespace),
     '#description' => t("Unique PID for this collection.  <br />Pids take the general form of namespace:collection eg islandora:pamphlets"),
   );
   if (!$restricted) {
@@ -81,7 +88,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
       '#title' => "Collection Namespace",
       '#type' => 'textfield',
       '#size' => 15,
-      '#default_value' => 'default',
+      '#default_value' => $collection_namespace,
       '#description' => t("Namespace for objects in this collection."),
     );
   }
@@ -146,6 +153,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
     '#title' => "Choose Namespace",
     '#type' => 'textfield',
     '#size' => 15,
+    '#default_value' => $collection_namespace,
     '#description' => t("Choose namespace for objects in this collection associated with this content model"),
   );
   $form['manage_collection_policy']['add']['submit'] = array(
@@ -193,7 +201,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
   $form['change_cmodel']['current_content_model'] = array(
     '#title' => "Choose content model to be changed",
     '#type' => 'select',
-    '#options' => $cm_options,
+    '#options' => $represented_content_models,
     '#description' => t("All objects in this collection with the selected content model will be changed."),
   );
   $form['change_cmodel']['new_content_model'] = array(
@@ -248,20 +256,38 @@ function collection_management_form_validate($form, &$form_state) {
     module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
     $pid = $form_state['values']['new_collection_pid'];
     $item = new fedora_item($pid);
+    $needs_model = TRUE;
+    foreach ($form_state['values']['content_models'] as $key => $value) {
+      if (is_string($value)) {
+        $needs_model = FALSE;
+      }
+    }
+    $checked = array_values($form_state['values']['content_models']);
     if ($item->exists()) {
-      form_set_error('new_collection_pid', t("$pid already exists within your repository. the PID must be unique"));
+      form_set_error('new_collection_pid', t("$pid already exists within your repository. the PID must be unique. Click on 'Manage This Collection' tab and enter new value."));
       return;
     }
     if (!valid_pid($pid)) {
-      form_set_error('new_collection_pid', t("$pid is not a valid identifier"));
+      form_set_error('new_collection_pid', t("$pid is not a valid identifier. Click on 'Manage This Collection' tab and enter new value."));
+      return;
+    }
+    if ($needs_model) {
+      form_set_error('content_models', t("At least one content model must be selected. Click on 'Manage This Collection' tab and enter content model."));
       return;
     }
   }
   if ($form_state['clicked_button']['#id'] == 'add_cm') {
-    if (!valid_pid($form_state['values']['new_cp_namespace'])) {
-      form_set_error('new_cp_namespace', t("Namespace must be a valid PID"));
+   $name_parts = explode(":", $form_state['values']['new_cp_namespace']);
+
+    $namespace = $name_parts[0] . ":1";
+    if (!valid_pid($namespace)) {
+      form_set_error('new_cp_namespace', t("Namespace must be valid. Click on 'Manage This Collection' tab and enter new value."));
       return;
     }
+    $form_state['values']['new_cp_namespace'] = $namespace;
+  }
+  if ($form_state['clicked_button']['#id'] == 'add_class') {
+
   }
 }
 
@@ -278,14 +304,7 @@ function collection_management_form_submit($form, &$form_state) {
   global $user;
   $collection_pid = $form_state['values']['parent_collection'];
   $policy = CollectionPolicy::loadFromCollection($collection_pid, TRUE);
-  if ($form_state['clicked_button']['#id'] == 'create_class') {
-    $module_path = drupal_get_path('module', 'fedora_repository');
-    $thumbnail = drupal_get_path('module', 'Fedora_Repository') . '/images/Crystal_Clear_filesystem_folder_grey.png';
-    $new_collection_pid = $form_state['values']['new_collection_pid'];
-    $new_collection_label = $form_state['values']['collection_name'];
-    $pid_namespace = $form_state['values']['collection_namespace'];
-    $all_cModels = get_content_models_as_option_array();
-    $collection_policy = '<?xml version="1.0" encoding="UTF-8"?>
+  $collection_policy = '<?xml version="1.0" encoding="UTF-8"?>
 <collection_policy xmlns="http://www.islandora.ca" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="" xsi:schemaLocation="http://www.islandora.ca http://syn.lib.umanitoba.ca/collection_policy.xsd">
     <content_models>
     </content_models>
@@ -294,6 +313,15 @@ function collection_management_form_submit($form, &$form_state) {
     <staging_area></staging_area>
     <relationship>isMemberOfCollection</relationship>
 </collection_policy>';
+
+  if ($form_state['clicked_button']['#id'] == 'create_class') {
+    $module_path = drupal_get_path('module', 'fedora_repository');
+    $thumbnail = drupal_get_path('module', 'Fedora_Repository') . '/images/Crystal_Clear_filesystem_folder_grey.png';
+    $new_collection_pid = $form_state['values']['new_collection_pid'];
+    $new_collection_label = $form_state['values']['collection_name'];
+    $pid_namespace = $form_state['values']['collection_namespace'];
+    $all_cModels = get_content_models_as_option_array();
+
     $content_models = $form_state['values']['content_models'];
     $collection_policy_xml = simplexml_load_string($collection_policy);
     foreach ($content_models as $content_model) {
@@ -308,12 +336,17 @@ function collection_management_form_submit($form, &$form_state) {
     $item = fedora_item::ingest_new_item($new_collection_pid, 'A', $new_collection_label, $user->name);
     $item->add_relationship('isMemberOfCollection', $collection_pid, RELS_EXT_URI);
     $item->add_relationship('hasModel', 'islandora:collectionCModel', FEDORA_MODEL_URI);
-    $item->add_datastream_from_string($collection_policy_xml->saveXML(), 'COLLECTION_POLICY');
+    $item->add_datastream_from_string($collection_policy_xml->saveXML(), 'COLLECTION_POLICY', 'COLLECTION_POLICY', 'text/xml', 'X');
     $item->add_datastream_from_file($thumbnail, 'TN');
     drupal_goto("/fedora/repository/$new_collection_pid");
   }
 
   if ($form_state['clicked_button']['#id'] == 'add_cm') {
+    if (!$policy) {
+      $item = new Fedora_Item($collection_pid);
+      $item->add_datastream_from_string($collection_policy, 'COLLECTION_POLICY', 'COLLECTION_POLICY', 'text/xml', 'X');
+      $policy = CollectionPolicy::loadFromCollection($collection_pid, TRUE);
+    }
 
     $cp_namespace = $form_state['values']['new_cp_namespace'];
     $cp_content_model = $form_state['values']['content_model_to_add'];
@@ -386,11 +419,22 @@ function collection_management_form_submit($form, &$form_state) {
   if ($form_state['clicked_button']['#id'] == 'delete_collection') {
     $collection_name = $form_state['values']['collection_name'];
     $pids = get_related_items_as_array($collection_pid, 'isMemberOfCollection');
+    $query = "select \$object from <#ri>
+              where (\$object <info:fedora/fedora-system:def/relations-external#isMemberOf> <info:fedora/$collection_pid>
+              or \$object <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> <info:fedora/$collection_pid>)
+              ";
+    $query = htmlentities(urlencode($query));
+    $content = '';
 
+    $url = variable_get('fedora_repository_url', 'http://localhost:8080/fedora/risearch');
+    $url .= "?type=tuples&flush=TRUE&format=csv&limit=$limit&offset=$offset&lang=itql&stream=on&query=" . $query;
+    $content .= do_curl($url);
+    $results = explode("\n", $content);
+    $pids = preg_replace('/^info:fedora\/|"object"/', '', $results);
     $batch = array(
       'title' => "Deleting Objects from  $name",
       'operations' => array(),
-      'file' => drupal_get_path('module', 'fedora_repository') . '/CollectionManagement.inc',
+      'file' => drupal_get_path('module', 'islandora_collection_manager') . '/CollectionManagement.inc',
     );
 
 
@@ -418,4 +462,29 @@ function delete_objects_as_batch($pid) {
       $item_to_delete->purge("$object purged by $name");
     }
   }
+}
+
+function get_represented_content_models($pid) {
+  module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
+  module_load_include('inc', 'fedora_repository', 'api/fedora_item');
+  $query = "select \$model from <#ri>
+where (\$object <info:fedora/fedora-system:def/relations-external#isMemberOf> <info:fedora/$pid>
+       or \$object <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> <info:fedora/$pid>)
+       and \$object <info:fedora/fedora-system:def/model#hasModel> \$model";
+  $query = htmlentities(urlencode($query));
+  $content = '';
+  $url = variable_get('fedora_repository_url', 'http://localhost:8080/fedora/risearch');
+  $url .= "?type=tuples&flush=TRUE&format=csv&limit=$limit&offset=$offset&lang=itql&stream=on&query=" . $query;
+  $content .= do_curl($url);
+  $results = explode("\n", $content);
+  $model_pids = preg_replace('/^info:fedora\/|"model"/', '', $results);
+  $represented_models = array();
+  foreach ($model_pids as $model_pid) {
+    if ($model_pid && $model_pid != 'fedora-system:FedoraObject-3.0') {
+      $item = new fedora_item($model_pid);
+      $label = $item->objectProfile->objLabel;
+      $represented_models[$model_pid] = "$model_pid ~ $label";
+    }
+  }
+  return $represented_models;
 }
