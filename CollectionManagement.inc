@@ -124,7 +124,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
   $form['child_creation']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Create Collection'),
-    '#id' => 'create_class'
+    '#id' => 'create_child'
   );
   $form['manage_collection_policy'] = array(
     '#title' => "Manage Collection Policies",
@@ -254,12 +254,12 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
  * @param array $form_state
  */
 function collection_management_form_validate($form, &$form_state) {
-  if ($form_state['clicked_button']['#id'] == 'create_class') {
+  if ($form_state['clicked_button']['#id'] == 'create_child') {
     module_load_include('inc', 'fedora_repository', 'api/fedora_item');
     module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
     $pid = $form_state['values']['new_collection_pid'];
     $item = new fedora_item($pid);
-    $needs_model = TRUE;
+    $needs_model = FALSE;
     foreach ($form_state['values']['content_models'] as $key => $value) {
       if (is_string($value)) {
 
@@ -315,6 +315,7 @@ function collection_management_form_submit($form, &$form_state) {
   $collection_policy = '<?xml version="1.0" encoding="UTF-8"?>
 <collection_policy xmlns="http://www.islandora.ca" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="" xsi:schemaLocation="http://www.islandora.ca http://syn.lib.umanitoba.ca/collection_policy.xsd">
     <content_models>
+    <content_model dsid="ISLANDORACM" name="Islandora Collection Model ~ islandora:collectionCModel" namespace="islandora:1" pid="islandora:collectionCModel"/>
     </content_models>
     <search_terms>
     </search_terms>
@@ -322,7 +323,7 @@ function collection_management_form_submit($form, &$form_state) {
     <relationship>isMemberOfCollection</relationship>
 </collection_policy>';
 
-  if ($form_state['clicked_button']['#id'] == 'create_class') {
+  if ($form_state['clicked_button']['#id'] == 'create_child') {
     $module_path = drupal_get_path('module', 'fedora_repository');
     $thumbnail = drupal_get_path('module', 'Fedora_Repository') . '/images/Crystal_Clear_filesystem_folder_grey.png';
     $new_collection_pid = $form_state['values']['new_collection_pid'];
