@@ -38,7 +38,6 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
     foreach ($supported_collection_models as $supported_model) {
       $current_models_in_policy[] = $supported_model->pid;
     }
-
   }
   $cm_options = array();
   $name_mappings = array();
@@ -282,7 +281,7 @@ function collection_management_form_validate($form, &$form_state) {
   }
   if ($form_state['clicked_button']['#id'] == 'add_cm') {
 
-   $name_parts = explode(":", $form_state['values']['new_cp_namespace']);
+    $name_parts = explode(":", $form_state['values']['new_cp_namespace']);
     $namespace = $name_parts[0] . ":1";
     if (!valid_pid($namespace)) {
       form_set_error('new_cp_namespace', t("Namespace must be valid. Click on 'Manage This Collection' tab and enter new value."));
@@ -439,17 +438,18 @@ function collection_management_form_submit($form, &$form_state) {
     $url .= "?type=tuples&flush=TRUE&format=csv&limit=$limit&offset=$offset&lang=itql&stream=on&query=" . $query;
     $content .= do_curl($url);
     $results = explode("\n", $content);
-    $pids = preg_replace('/^info:fedora\/|"object"/', '', $results);
+    $pids = preg_replace('/^info:fedora\/|"object"|/', '', $results);
+    $pids = array_values($pids);
     $batch = array(
       'title' => "Deleting Objects from  $name",
       'operations' => array(),
       'file' => drupal_get_path('module', 'islandora_collection_manager') . '/CollectionManagement.inc',
     );
 
-
     foreach ($pids as $pid) {
-
-      $batch['operations'][] = array('delete_objects_as_batch', array($pid));
+      if ($pid) {
+        $batch['operations'][] = array('delete_objects_as_batch', array($pid));
+      }
     }
 
     batch_set($batch);
