@@ -38,7 +38,6 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
     foreach ($supported_collection_models as $supported_model) {
       $current_models_in_policy[] = $supported_model->pid;
     }
-
   }
   $cm_options = array();
   $name_mappings = array();
@@ -124,7 +123,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
   $form['child_creation']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Create Collection'),
-    '#id' => 'create_class'
+    '#id' => 'create_child'
   );
   $form['manage_collection_policy'] = array(
     '#title' => "Manage Collection Policies",
@@ -254,12 +253,12 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
  * @param array $form_state
  */
 function collection_management_form_validate($form, &$form_state) {
-  if ($form_state['clicked_button']['#id'] == 'create_class') {
+  if ($form_state['clicked_button']['#id'] == 'create_child') {
     module_load_include('inc', 'fedora_repository', 'api/fedora_item');
     module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
     $pid = $form_state['values']['new_collection_pid'];
     $item = new fedora_item($pid);
-    $needs_model = TRUE;
+    $needs_model = FALSE;
     foreach ($form_state['values']['content_models'] as $key => $value) {
       if (is_string($value)) {
 
@@ -282,7 +281,7 @@ function collection_management_form_validate($form, &$form_state) {
   }
   if ($form_state['clicked_button']['#id'] == 'add_cm') {
 
-   $name_parts = explode(":", $form_state['values']['new_cp_namespace']);
+    $name_parts = explode(":", $form_state['values']['new_cp_namespace']);
     $namespace = $name_parts[0] . ":1";
     if (!valid_pid($namespace)) {
       form_set_error('new_cp_namespace', t("Namespace must be valid. Click on 'Manage This Collection' tab and enter new value."));
@@ -315,6 +314,7 @@ function collection_management_form_submit($form, &$form_state) {
   $collection_policy = '<?xml version="1.0" encoding="UTF-8"?>
 <collection_policy xmlns="http://www.islandora.ca" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="" xsi:schemaLocation="http://www.islandora.ca http://syn.lib.umanitoba.ca/collection_policy.xsd">
     <content_models>
+    <content_model dsid="ISLANDORACM" name="Islandora Collection Model ~ islandora:collectionCModel" namespace="islandora:1" pid="islandora:collectionCModel"/>
     </content_models>
     <search_terms>
     </search_terms>
@@ -322,7 +322,7 @@ function collection_management_form_submit($form, &$form_state) {
     <relationship>isMemberOfCollection</relationship>
 </collection_policy>';
 
-  if ($form_state['clicked_button']['#id'] == 'create_class') {
+  if ($form_state['clicked_button']['#id'] == 'create_child') {
     $module_path = drupal_get_path('module', 'fedora_repository');
     $thumbnail = drupal_get_path('module', 'Fedora_Repository') . '/images/Crystal_Clear_filesystem_folder_grey.png';
     $new_collection_pid = $form_state['values']['new_collection_pid'];
@@ -438,17 +438,18 @@ function collection_management_form_submit($form, &$form_state) {
     $url .= "?type=tuples&flush=TRUE&format=csv&limit=$limit&offset=$offset&lang=itql&stream=on&query=" . $query;
     $content .= do_curl($url);
     $results = explode("\n", $content);
-    $pids = preg_replace('/^info:fedora\/|"object"/', '', $results);
+    $pids = preg_replace('/^info:fedora\/|"object"|/', '', $results);
+    $pids = array_values($pids);
     $batch = array(
       'title' => "Deleting Objects from  $name",
       'operations' => array(),
       'file' => drupal_get_path('module', 'islandora_collection_manager') . '/CollectionManagement.inc',
     );
 
-
     foreach ($pids as $pid) {
-
-      $batch['operations'][] = array('delete_objects_as_batch', array($pid));
+      if ($pid) {
+        $batch['operations'][] = array('delete_objects_as_batch', array($pid));
+      }
     }
 
     batch_set($batch);
