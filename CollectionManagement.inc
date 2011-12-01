@@ -290,12 +290,7 @@ function collection_management_form_validate($form, &$form_state) {
     }
     $form_state['values']['new_cp_namespace'] = $namespace;
   }
-  if ($form_state['clicked_button']['#id'] == 'add_class') {
 
-  }
-  if ($form_state['clicked_button']['#id'] == 'add_class') {
-
-  }
 }
 
 /**
