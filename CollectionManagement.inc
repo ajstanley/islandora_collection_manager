@@ -36,7 +36,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
 
   if ($supported_collection_models) {
     foreach ($supported_collection_models as $supported_model) {
-      $current_models_in_policy[] = $supported_model->pid;
+      $current_models_in_policy[$supported_model->pid] = $supported_model->pid;
     }
   }
   $cm_options = array();
@@ -182,7 +182,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
 
     $form['manage_collection_policy']['remove']['submit'] = array(
       '#type' => 'submit',
-      '#value' => t('Remove Content Collection Policy'),
+      '#value' => t('Remove Content Model From Collection Policy'),
       '#id' => 'remove_cm'
     );
   }
@@ -317,6 +317,8 @@ function collection_management_form_submit($form, &$form_state) {
     <relationship>isMemberOfCollection</relationship>
 </collection_policy>';
 
+
+ // add child collection to policy
   if ($form_state['clicked_button']['#id'] == 'create_child') {
     $module_path = drupal_get_path('module', 'fedora_repository');
     $thumbnail = drupal_get_path('module', 'Fedora_Repository') . '/images/Crystal_Clear_filesystem_folder_grey.png';
@@ -344,6 +346,8 @@ function collection_management_form_submit($form, &$form_state) {
     drupal_goto("/fedora/repository/$new_collection_pid");
   }
 
+
+  // add content modely to collection policy
   if ($form_state['clicked_button']['#id'] == 'add_cm') {
     if (!$policy) {
       $item = new Fedora_Item($collection_pid);
