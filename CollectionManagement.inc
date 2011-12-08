@@ -133,7 +133,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
   );
 
   $form['manage_collection_policy']['add'] = array(
-    '#title' => "Add Content Model",
+    '#title' => "Add Content Model to Collection Policy",
     '#type' => 'fieldset',
     '#collapsible' => TRUE,
     '#collapsed' => $show_delete,
@@ -166,7 +166,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
 
   if (count($current_models_in_policy) > 0) {
     $form['manage_collection_policy']['remove'] = array(
-      '#title' => "Delete Content Model",
+      '#title' => "Delete Content Model from Collection Policy",
       '#type' => 'fieldset',
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
@@ -295,9 +295,9 @@ function collection_management_form_validate($form, &$form_state) {
 
 /**
  * collection creation form submit
- * @global type $user
- * @param type $form
- * @param type $form_state
+ * @global user $user
+ * @param arary $form
+ * @param array $form_state
  */
 function collection_management_form_submit($form, &$form_state) {
   module_load_include('inc', 'fedora_repository', 'api/fedora_collection');
@@ -347,7 +347,7 @@ function collection_management_form_submit($form, &$form_state) {
   }
 
 
-  // add content modely to collection policy
+  // add content model to collection policy
   if ($form_state['clicked_button']['#id'] == 'add_cm') {
     if (!$policy) {
       $item = new Fedora_Item($collection_pid);
@@ -362,6 +362,7 @@ function collection_management_form_submit($form, &$form_state) {
     drupal_set_message("Collection model successfully added");
   }
 
+  //remove content model from collection policy
   if ($form_state['clicked_button']['#id'] == 'remove_cm') {
     $candidates = $form_state['values']['content_models_to_remove'];
     $count = 0;
@@ -380,6 +381,8 @@ function collection_management_form_submit($form, &$form_state) {
     }
   }
 
+
+  //change content model on selected objects
   if ($form_state['clicked_button']['#id'] == 'change_model') {
     $current_content_model = $form_state['values']['current_content_model'];
     $new_content_model = $form_state['values']['new_content_model'];
@@ -423,6 +426,8 @@ function collection_management_form_submit($form, &$form_state) {
     drupal_set_message("$current_content_model changed to $new_content_model on $count objects");
   }
 
+  // delete collection
+
   if ($form_state['clicked_button']['#id'] == 'delete_collection') {
     $collection_name = $form_state['values']['collection_name'];
     $pids = get_related_items_as_array($collection_pid, 'isMemberOfCollection');
@@ -458,7 +463,7 @@ function collection_management_form_submit($form, &$form_state) {
 
 /**
  * deletes PID if pid is not collection
- * @param <type> $pid
+ * @param string $pid
  */
 function delete_objects_as_batch($pid) {
   module_load_include('inc', 'fedora_repository', 'api/fedora_item');
@@ -471,6 +476,13 @@ function delete_objects_as_batch($pid) {
     }
   }
 }
+
+/**
+ * returns content models associated with all objects in a collection
+ * @param string $pid
+ * @return arrau
+ */
+
 
 function get_represented_content_models($pid) {
   module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
