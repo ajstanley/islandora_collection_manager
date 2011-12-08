@@ -1,6 +1,6 @@
-; $Id$
 name = Islandora Collection Manager
 description = Provides additional tabs in Collection views
 dependencies[] = fedora_repository
-package = Islandora
+package = Islandora Tools
+version = 11.3beta2
 core = 6.x
