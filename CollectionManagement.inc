@@ -224,7 +224,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
       '#title' => "Permanently Delete $collection_name",
       '#type' => 'fieldset',
       '#description' => t("Clicking this button will delete all objects unique to the <em>$collection_name</em> collection, as well as any empty child collections. <br />
-                           <em>$collection_name</em> itself will deleted unless it has associated populated child collections<br />
+                           <em>$collection_name</em> itself will be deleted unless it has associated populated child collections.<br />
                            <strong>This action cannot be undone.</strong>"),
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
