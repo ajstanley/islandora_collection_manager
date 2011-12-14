@@ -237,6 +237,13 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
       '#collapsed' => TRUE,
     );
 
+    $form['delete_collection']['confirm']['delete_root'] = array(
+      '#type' => 'checkbox',
+      '#title' => "Remove collection object when empty?",
+      "#description" => t("If checked, the collection object will be removed once objects in the colelction have been deleted.<br />
+                           If left unchecked, objects will be deleted, but the collection object will remain."),
+      '#id' => 'delete_collection',
+    );
     $form['delete_collection']['confirm']['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Delete this collection'),
@@ -469,7 +476,7 @@ function collection_management_form_submit($form, &$form_state) {
     }
     $unique_pids = array_diff($unique_pids, $non_unique_pids, $populated_child_collections);
     $non_unique_pids = array_diff($non_unique_pids, $populated_child_collections);
-    if (empty($populated_child_collections)) {
+    if (empty($populated_child_collections) && $form_state['values']['delete_root']) {
       $unique_pids[] = $collection_pid;
     }
     else {
@@ -489,7 +496,10 @@ function collection_management_form_submit($form, &$form_state) {
     foreach ($non_unique_pids as $pid) {
       $batch['operations'][] = array('remove_collection_association', array($pid, $collection_pid));
     }
-
+    if (empty($batch['operations'])) {
+      drupal_set_message("Nothing to delete.");
+      drupal_goto("/fedora/repository/$goto");
+    }
     batch_set($batch);
     batch_process("/fedora/repository/$goto");
   }
