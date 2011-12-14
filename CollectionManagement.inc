@@ -240,7 +240,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
     $form['delete_collection']['confirm']['delete_root'] = array(
       '#type' => 'checkbox',
       '#title' => "Remove collection object when empty?",
-      "#description" => t("If checked, the collection object will be removed once objects in the colelction have been deleted.<br />
+      "#description" => t("If checked, the collection object will be removed once objects in the collection have been deleted.<br />
                            If left unchecked, objects will be deleted, but the collection object will remain."),
       '#id' => 'delete_collection',
     );
