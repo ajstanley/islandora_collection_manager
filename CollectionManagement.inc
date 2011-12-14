@@ -56,10 +56,7 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
 
   $content_models = get_content_models_as_option_array();
   unset($content_models['islandora:collectionCModel']);
-  $form['banner'] = array(
-    '#type' => 'item',
-    '#value' => t("Manage $collection_name"),
-  );
+
   $form['child_creation'] = array(
     '#title' => "Create Child Collection",
     '#type' => 'fieldset',
@@ -224,9 +221,11 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
 
   if (user_access('delete entire collections')) {
     $form['delete_collection'] = array(
-      '#title' => "Permanently Delete objects in $collection_name",
+      '#title' => "Permanently Delete $collection_name",
       '#type' => 'fieldset',
-      '#description' => t("Clicking this button will delete all objects within $collection_name. <br /> <strong>This action cannot be undone.</strong>"),
+      '#description' => t("Clicking this button will delete all objects unique to the <em>$collection_name</em> collection, as well as any empty child collections. <br />
+                           <em>$collection_name</em> itself will deleted unless it has associated populated child collections<br />
+                           <strong>This action cannot be undone.</strong>"),
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
     );
@@ -430,11 +429,18 @@ function collection_management_form_submit($form, &$form_state) {
 
   if ($form_state['clicked_button']['#id'] == 'delete_collection') {
     $collection_name = $form_state['values']['collection_name'];
-    $pids = get_related_items_as_array($collection_pid, 'isMemberOfCollection');
-    // $query = "select \$object from <#ri>
-    //           where (\$object <info:fedora/fedora-system:def/relations-external#isMemberOf> <info:fedora/$collection_pid>
-    //           or \$object <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> <info:fedora/$collection_pid>)
-    //           ";
+    $child_collections = get_child_collections($collection_pid);
+    $parents = Islandora_collections_get_collection_from_pid($collection_pid);
+    $goto = $parents[0];
+    $populated_child_collections = array();
+    foreach ($child_collections as $child) {
+      $pids = get_related_items_as_array($child, 'isMemberOfCollection');
+      if ($pids[0]) {
+        $populated_child_collections[] = $child;
+      }
+    }
+
+
 
     $query = "select \$object \$collection from <#ri>
               where (\$object <info:fedora/fedora-system:def/relations-external#isMemberOf> \$collection
@@ -461,7 +467,12 @@ function collection_management_form_submit($form, &$form_state) {
         $non_unique_pids[] = $values[0];
       }
     }
-    $unique_pids = array_diff($unique_pids, $non_unique_pids);
+    $unique_pids = array_diff($unique_pids, $non_unique_pids, $populated_child_collections);
+    $non_unique_pids = array_diff($non_unique_pids, $populated_child_collections);
+    if (!$populated_child_collections[0]) {
+      $unique_pids[] = $collection_pid;
+      $goto = $collection_pid;
+    }
     $batch = array(
       'title' => "Deleting Objects from  $name",
       'operations' => array(),
@@ -478,24 +489,19 @@ function collection_management_form_submit($form, &$form_state) {
     }
 
     batch_set($batch);
-    batch_process('/fedora/repository');
+    batch_process("/fedora/repository/$goto");
   }
 }
 
 /**
- * deletes PID if pid is not collection
+ * deletes PID 
  * @param string $pid
  */
 function delete_objects_as_batch($pid) {
   module_load_include('inc', 'fedora_repository', 'api/fedora_item');
   $name = $user->name;
   $item_to_delete = new Fedora_Item($pid);
-  $models = $item_to_delete->get_models();
-  foreach ($models as $model) {
-    if ($model['object'] != 'islandora:collectionCModel') {
-      $item_to_delete->purge("$object purged by $name");
-    }
-  }
+  $item_to_delete->purge("$object purged by $name");
 }
 
 /**
@@ -536,4 +542,43 @@ where (\$object <info:fedora/fedora-system:def/relations-external#isMemberOf> <i
     }
   }
   return $represented_models;
+}
+
+function get_child_collections($collection_pid) {
+
+  $query = <<<EOD
+  select \$object from <#ri>
+    where \$object <info:fedora/fedora-system:def/model#hasModel> <info:fedora/islandora:collectionCModel>
+    and \$object  <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> <info:fedora/$collection_pid>
+EOD;
+
+  $query = htmlentities(urlencode($query));
+  $content = '';
+
+  $url = variable_get('fedora_repository_url', 'http://localhost:8080/fedora/risearch');
+  $url .= "?type=tuples&flush=TRUE&format=csv&limit=$limit&offset=$offset&lang=itql&stream=on&query=" . $query;
+  $content .= do_curl($url);
+  $results = explode("\n", $content);
+  $lines = preg_replace('/info:fedora\/|"object"/', '', $results);
+  $collection_pids = array_values(array_filter($lines));
+  return $collection_pids;
+}
+
+function Islandora_collections_get_collection_from_pid($pid) {
+
+  module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
+  $query_string = 'select  $parent  from <#ri>
+		where ($object <fedora-rels-ext:isMemberOf> $parent
+    or $object <fedora-rels-ext:isMemberOfCollection> $parent)
+		and $object <dc:identifier> \'' . $pid . '\'
+		order by $object';
+
+  $query_string = htmlentities(urlencode($query_string));
+  $url = variable_get('fedora_repository_url', 'http://localhost:8080/fedora/risearch');
+  $url .= '?type=tuples&flush=true&format=csv&limit=13000&lang=itql&stream=on&query=' . $query_string;
+  $content = do_curl($url, TRUE);
+  $results = explode("\n", $content);
+  $object_pids = preg_replace('/^info:fedora\/|"parent"| /', '', $results);
+  $object_pids = array_values(array_filter($object_pids));
+  return $object_pids;
 }
