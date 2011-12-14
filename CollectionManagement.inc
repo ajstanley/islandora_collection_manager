@@ -435,7 +435,7 @@ function collection_management_form_submit($form, &$form_state) {
     $populated_child_collections = array();
     foreach ($child_collections as $child) {
       $pids = get_related_items_as_array($child, 'isMemberOfCollection');
-      if ($pids[0]) {
+      if (!empty($pids)) {
         $populated_child_collections[] = $child;
       }
     }
@@ -469,7 +469,7 @@ function collection_management_form_submit($form, &$form_state) {
     }
     $unique_pids = array_diff($unique_pids, $non_unique_pids, $populated_child_collections);
     $non_unique_pids = array_diff($non_unique_pids, $populated_child_collections);
-    if (!$populated_child_collections[0]) {
+    if (!empty($populated_child_collections)) {
       $unique_pids[] = $collection_pid;
       $goto = $collection_pid;
     }
