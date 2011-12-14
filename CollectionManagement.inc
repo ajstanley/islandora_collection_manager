@@ -469,8 +469,10 @@ function collection_management_form_submit($form, &$form_state) {
     }
     $unique_pids = array_diff($unique_pids, $non_unique_pids, $populated_child_collections);
     $non_unique_pids = array_diff($non_unique_pids, $populated_child_collections);
-    if (!empty($populated_child_collections)) {
+    if (empty($populated_child_collections)) {
       $unique_pids[] = $collection_pid;
+    }
+    else {
       $goto = $collection_pid;
     }
     $batch = array(
