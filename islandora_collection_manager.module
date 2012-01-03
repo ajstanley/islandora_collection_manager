@@ -38,7 +38,7 @@ function collection_management_wrapper($collection_pid) {
 }
 
 function islandora_collection_manager_islandora_tabs($content_models, $pid) {
-  if (!variable_get('islandora_add_collection_tabs', TRUE)) {
+  if (!variable_get('islandora_add_collection_tabs', TRUE)|| !user_access('manage collections')) {
     return;
   }
   module_load_include('inc', 'islandora_collection_manager', 'CollectionManagement');
