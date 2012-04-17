@@ -10,7 +10,7 @@ function islandora_collection_manager_menu() {
   );
 
   $items['admin/settings/islandora_collection_manager'] = array(
-    'title' => 'Collection Manager Admin',
+    'title' => t('Collection Manager Admin'),
     'description' => 'Configure Islandora Collection Module',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('islandora_collection_management_admin_settings'),
