@@ -54,17 +54,19 @@ function islandora_collection_deletion_form(&$form_state, $pid) {
   if (user_access('delete entire collections')) {
     return $form;
   }
+
 }
 
 function islandora_collection_deletion_form_submit($form, &$form_state) {
   global $user;
   module_load_include('inc', 'fedora_repository', 'api/fedora_item');
   module_load_include('inc', 'fedora_repository', 'api/fedora_collection');
+  $collection_pid = $form_state['values']['current'];
   $parents = Islandora_collections_get_collection_from_pid($collection_pid);
   $collection_pid = $form_state['values']['current'];
   if ($form_state['values']['delete_root'] == 1) {
     delete_root_collection($collection_pid);
-    drupal_goto($parents[0]);
+    drupal_goto("fedora/repository/" .$parents[0]);
   }
 
   $child_collections = get_child_collections($collection_pid);
@@ -95,7 +97,7 @@ function islandora_collection_deletion_form_submit($form, &$form_state) {
     $item = new Fedora_Item($pid_to_delete);
     $item->purge("Purged by " . $user->name);
   }
-  drupal_goto($parents[0]);
+  drupal_goto("fedora/repository/" .$parents[0]);
 }
 
 function delete_root_collection($pid) {

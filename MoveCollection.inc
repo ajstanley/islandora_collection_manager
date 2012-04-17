@@ -23,7 +23,7 @@ function islandora_collection_migrate_form(&$form_state, $pid) {
     '#collapsed' => TRUE,
   );
   $form['migrate']['new_collection'] = array(
-    '#title' => 'New Collection',
+    '#title' => t('New Collection'),
     '#description' => t("All content will be migrated from $pid to the selected collection"),
     '#type' => 'select',
     '#options' => $potential_collections,
