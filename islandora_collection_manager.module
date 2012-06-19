@@ -61,7 +61,10 @@ function get_collection_management_content($content_models, $pid) {
   if (user_access('delete entire collections')) {
     $content .= drupal_get_form('islandora_collection_deletion_form', $pid);
   }
-
+  $extras = module_invoke_all('islandora_collection_mangement', $pid);
+  foreach($extras as $extra){
+    $content .= $extra;
+  }
   $form['add_collection_tab'] = array(
     '#type' => 'tabpage',
     '#title' => t('Manage This Collection'),
