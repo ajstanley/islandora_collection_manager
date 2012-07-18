@@ -3,6 +3,7 @@
 /**
  * Returns a formatted table listing all members of the collection
  * defined by the $collection_pid parameter
+ * can be called for any function requiring a formatted table with selectable elements
  * @param string $collection_pid
  * @return array
  */
