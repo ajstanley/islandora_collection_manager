@@ -60,13 +60,18 @@ function islandora_collection_manager_islandora_tabs($content_models, $pid) {
 
 function get_collection_management_content($content_models, $pid) {
   module_load_include('inc', 'islandora_collection_manager', 'CollectionManagement');
+  module_load_include('inc', 'fedora_repository', 'CollectionClass');
 
-
+  $data = CollectionClass::getRelatedItems($pid);
+  $xml = simplexml_load_string($data);
+  $results = $xml->results->result->count();
 
   $list = array();
   $list[] = l(t('Create Child Collection'), "islandora/collection/management/new collection/$pid");
   $list[] = l(t('Manage Collection Policy'), "islandora/collection/management/collection policy/$pid");
-  $list[] = l(t('Migrate Members of this Collection'), "islandora/collection/management/migrate/$pid");
+  if ($results > 0) {
+    $list[] = l(t('Migrate Members of this Collection'), "islandora/collection/management/migrate/$pid");
+  }
   $list[] = l(t('Change Content Models'), "islandora/collection/management/change content model/$pid");
   $list[] = l(t('Add or Modify QUERY'), "islandora/collection/management/query/$pid");
   if (user_access('delete entire collections')) {
