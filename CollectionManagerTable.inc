@@ -37,7 +37,7 @@ function islandora_collection_table($collection_pid) {
   );
 
   $table = array(
-    '#header' => array(theme('table_select_header_cell'), 'Member', 'Label'),
+    '#header' => array(theme('table_select_header_cell'), 'Thumbnail', 'PID', 'Label'),
     '#theme' => 'islandora_collection_management_form_table',
     '#tree' => TRUE,
     'rows' => array(),
@@ -56,11 +56,16 @@ function islandora_collection_table($collection_pid) {
       'attributes' => array('target' => '_blank', 'class' => 'fedora_image', 'title' => $key),
       'html' => TRUE,
     );
+    $textOptions = array(
+      'attributes' => array('target' => '_blank'),
+    );
+
     $img = "<img src='$base_url/fedora/repository/$key/TN' width='28' height='42'>";
     $img = theme_image("$base_url/fedora/repository/$key/TN", '', NULL, array('width' => '20'), FALSE);
     $rows[] = array(
       '#pid' => $key,
-      'pid' => array('#value' => l($img, 'fedora/repository/' . $key, $alink_options)),
+      'img' => array('#value' => l($img, 'fedora/repository/' . $key, $alink_options)),
+      'pid' => array('#value' => l($key, 'fedora/repository/' . $key, $textOptions)),
       'title' => array('#value' => $object),
     );
   }
