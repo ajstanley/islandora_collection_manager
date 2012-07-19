@@ -5,6 +5,12 @@ function islandora_collection_change_contentmodel(&$form_state, $pid) {
   $represented_content_models = get_represented_content_models($pid);
   $new_content_models = get_content_models_as_option_array();
   $form = array();
+
+  $form['link'] = array(
+    '#type' => 'item',
+    '#value' => l(t("Return to collection view"), "fedora/repository/$pid"),
+  );
+
   $form['titlebox'] = array(
     '#type' => 'item',
     '#value' => t("Change Content Models within $pid"),

@@ -15,6 +15,12 @@ function islandora_collection_add_query(&$form_state, $pid) {
     $query = $item->get_datastream_dissemination('QUERY');
   }
   $form = array();
+
+  $form['link'] = array(
+    '#type' => 'item',
+    '#value' => l(t("Return to collection view"), "fedora/repository/$pid"),
+  );
+
   $form['pid'] = array(
     '#type' => 'hidden',
     '#value' => $pid,

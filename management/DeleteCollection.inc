@@ -18,10 +18,15 @@ function islandora_collection_deletion_form(&$form_state, $pid) {
 
 
   $form = array();
+
+  $form['link'] = array(
+    '#type' => 'item',
+    '#value' => l(t("Return to collection view"), "fedora/repository/$pid"),
+  );
+
   $form['collection_delete'] = array(
     '#title' => $deletion_message,
     '#type' => 'fieldset',
-
   );
 
   if ($table) {
@@ -54,7 +59,6 @@ function islandora_collection_deletion_form(&$form_state, $pid) {
   if (user_access('delete entire collections')) {
     return $form;
   }
-
 }
 
 function islandora_collection_deletion_form_submit($form, &$form_state) {
@@ -66,7 +70,7 @@ function islandora_collection_deletion_form_submit($form, &$form_state) {
   $collection_pid = $form_state['values']['current'];
   if ($form_state['values']['delete_root'] == 1) {
     delete_root_collection($collection_pid);
-    drupal_goto("fedora/repository/" .$parents[0]);
+    drupal_goto("fedora/repository/" . $parents[0]);
   }
 
   $child_collections = get_child_collections($collection_pid);
@@ -92,12 +96,17 @@ function islandora_collection_deletion_form_submit($form, &$form_state) {
     }
   }
   $pids_to_delete = array_diff($pids, $populated_child_collections);
+  $batch = array(
+    'title' => "Deleting Selected Objects from collection",
+    'progress_message' => t('Deleted @current objects out of @total.'),
+    'operations' => array(),
+    'file' => drupal_get_path('module', 'islandora_collection_manager') . '/management/DeleteCollection.inc',
+  );
 
   foreach ($pids_to_delete as $pid_to_delete) {
-    $item = new Fedora_Item($pid_to_delete);
-    $item->purge("Purged by " . $user->name);
+    $batch['operations'][] = array('collection_manager_delete', array($pid_to_delete));
   }
-  drupal_goto("fedora/repository/$collection_pid");
+  batch_set($batch);
 }
 
 function delete_root_collection($pid) {
@@ -105,4 +114,11 @@ function delete_root_collection($pid) {
   $item = new Fedora_Item($pid);
   $item->purge();
   drupal_set_message("$pid deleted.");
+}
+
+function collection_manager_delete($pid) {
+  module_load_include('inc', 'fedora_repository', 'api/fedora_item');
+  $item = new Fedora_Item($pid);
+  $item->purge("Purged by " . $user->name);
+  $item->forget();
 }

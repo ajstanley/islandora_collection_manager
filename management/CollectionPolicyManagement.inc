@@ -8,6 +8,12 @@ function collection_policy_management($form_state, $pid) {
   );
   $form = array();
 
+  $form['link'] = array(
+    '#type' => 'item',
+    '#value' => l(t("Return to collection view"), "fedora/repository/$pid"),
+  );
+
+
   // place holder until we can establish a collection policy help file
 
   $form['help_link'] = array(

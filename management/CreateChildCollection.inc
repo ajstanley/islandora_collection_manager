@@ -4,6 +4,12 @@ function islandora_collection_create_child(&$form_state, $pid) {
   module_load_include('inc', 'fedora_repository', 'api/fedora_item');
   $collection_namespace = $current_vals[$cm->pid]['namespace'] = substr($pid, 0, strpos($pid, ":"));
   $form = array();
+
+  $form['link'] = array(
+    '#type' => 'item',
+    '#value' => l(t("Return to collection view"), "fedora/repository/$pid"),
+  );
+
   $form['titlebox'] = array(
     '#type' => 'item',
     '#value' => t("Create New Child Collection within $pid"),
