@@ -17,6 +17,13 @@ function islandora_collection_manager_menu() {
     'access arguments' => array('administer site configuration'),
     'type' => MENU_NORMAL_ITEM,
   );
+
+  $items['islandora/collection/management'] = array(
+    'title' => t('Collection Management'),
+    'page callback' => 'islandora_collection_management',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('manage collections'),
+  );
   return $items;
 }
 
@@ -53,18 +60,28 @@ function islandora_collection_manager_islandora_tabs($content_models, $pid) {
 
 function get_collection_management_content($content_models, $pid) {
   module_load_include('inc', 'islandora_collection_manager', 'CollectionManagement');
-  module_load_include('inc', 'islandora_collection_manager', 'MoveCollection');
-  module_load_include('inc', 'islandora_collection_manager', 'DeleteCollection');
+  module_load_include('inc', 'fedora_repository', 'CollectionClass');
 
-  $content = drupal_get_form('collection_management_form', $pid, $content_models);
-  $content .= drupal_get_form('islandora_collection_migrate_form', $pid);
+  $data = CollectionClass::getRelatedItems($pid);
+  $xml = simplexml_load_string($data);
+  $results = $xml->results->result->count();
+
+  $list = array();
+  $list[] = l(t('Create Child Collection'), "islandora/collection/management/new collection/$pid");
+  $list[] = l(t('Manage Collection Policy'), "islandora/collection/management/collection policy/$pid");
+  if ($results > 0) {
+    $list[] = l(t('Migrate Members of this Collection'), "islandora/collection/management/migrate/$pid");
+  }
+  $list[] = l(t('Change Content Models'), "islandora/collection/management/change content model/$pid");
+  $list[] = l(t('Add or Modify QUERY'), "islandora/collection/management/query/$pid");
   if (user_access('delete entire collections')) {
-    $content .= drupal_get_form('islandora_collection_deletion_form', $pid);
+    $list[] = l(t('Delete Members of this collection'), "islandora/collection/management/delete/$pid");
   }
   $extras = module_invoke_all('islandora_collection_mangement', $pid);
-  foreach($extras as $extra){
-    $content .= $extra;
+  foreach ($extras as $extra) {
+    $list[] = $extra;
   }
+  $content = theme_item_list($list);
   $form['add_collection_tab'] = array(
     '#type' => 'tabpage',
     '#title' => t('Manage This Collection'),
@@ -94,6 +111,28 @@ function islandora_collection_manager_theme() {
     'islandora_collection_management_form_table' => array(
       'arguments' => array('element' => NULL),
       'file' => 'CollectionManagerTable.inc',
-    )
+    ),
+    'islandora_collectionPolicy_table' => array(
+      'arguments' => array('element' => NULL),
+      'file' => 'CollectionPolicyManagement.inc',
+    ),
   );
+}
+
+function islandora_collection_management($function, $pid) {
+  module_load_include('inc', 'islandora_collection_manager', 'management/CollectionPolicyManagement');
+  module_load_include('inc', 'islandora_collection_manager', 'management/DeleteCollection');
+  module_load_include('inc', 'islandora_collection_manager', 'management/MoveCollection');
+  module_load_include('inc', 'islandora_collection_manager', 'management/ChangeContentModel');
+  module_load_include('inc', 'islandora_collection_manager', 'management/CreateChildCollection');
+  module_load_include('inc', 'islandora_collection_manager', 'management/AddCustomQuery');
+  $mappings = array(
+    'collection policy' => 'collection_policy_management',
+    'delete' => 'islandora_collection_deletion_form',
+    'migrate' => 'islandora_collection_migrate_form',
+    'change content model' => 'islandora_collection_change_contentmodel',
+    'new collection' => 'islandora_collection_create_child',
+    'query' => 'islandora_collection_add_query'
+  );
+  return drupal_get_form($mappings[$function], $pid);
 }

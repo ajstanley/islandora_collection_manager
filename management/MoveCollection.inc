@@ -16,11 +16,16 @@ function islandora_collection_migrate_form(&$form_state, $pid) {
     return;
   }
   $form = array();
+
+  $form['link'] = array(
+    '#type' => 'item',
+    '#value' => l(t("Return to collection view"), "fedora/repository/$pid"),
+  );
+
   $form['migrate'] = array(
     '#title' => "Migrate Members",
     '#type' => 'fieldset',
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
+
   );
   $form['migrate']['new_collection'] = array(
     '#title' => t('New Collection'),
