@@ -15,7 +15,9 @@ function islandora_collection_deletion_form(&$form_state, $pid) {
   $table = islandora_collection_table($pid);
   $deletion_message = ($table) ? "Delete Members of this Collection" : "Delete Collection";
   $submit_text_message = ($table) ? "Delete Selected Objects" : "Delete Collection";
-
+    $path = drupal_get_path('module', 'islandora_collection_manager');
+    drupal_add_js($path . '/js/collection.js?stopcache');
+    drupal_add_css($path . '/css/collection.css');
 
   $form = array();
 

@@ -7,8 +7,6 @@
  * @param string $collection_pid
  * @return array
  */
-
-
 function islandora_collection_table($collection_pid) {
   module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
 
@@ -39,7 +37,7 @@ function islandora_collection_table($collection_pid) {
   );
 
   $table = array(
-    '#header' => array(theme('table_select_header_cell'), t('Select All'), ''),
+    '#header' => array(theme('table_select_header_cell'), 'Member', 'Label'),
     '#theme' => 'islandora_collection_management_form_table',
     '#tree' => TRUE,
     'rows' => array(),
@@ -49,13 +47,20 @@ function islandora_collection_table($collection_pid) {
     ),
   );
   $rows = &$table['rows'];
-  if(empty($objects)){
+  if (empty($objects)) {
     return;
   }
+
   foreach ($objects as $key => $object) {
+    $alink_options = array(
+      'attributes' => array('target' => '_blank', 'class' => 'fedora_image', 'title' => $key),
+      'html' => TRUE,
+    );
+    $img = "<img src='$base_url/fedora/repository/$key/TN' width='28' height='42'>";
+    $img = theme_image("$base_url/fedora/repository/$key/TN", '', NULL, array('width' => '20'), FALSE);
     $rows[] = array(
       '#pid' => $key,
-      'pid' => array('#value' => l($key, 'fedora/repository/' . $key)),
+      'pid' => array('#value' => l($img, 'fedora/repository/' . $key, $alink_options)),
       'title' => array('#value' => $object),
     );
   }
@@ -63,16 +68,12 @@ function islandora_collection_table($collection_pid) {
   return $table;
 }
 
-
-
 /**
  * themes the form table.
  *
  * @param array $element Drupal Form Element.
  * @return string
  */
-
-
 function theme_islandora_collection_management_form_table(array $element) {
   $rows = array();
   foreach (element_children($element['rows']) as $child) {
