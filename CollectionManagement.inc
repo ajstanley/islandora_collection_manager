@@ -135,7 +135,9 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
  * collection creation form validate
  *
  * @param array $form
+ *   The form being validated.
  * @param array $form_state
+ *   The state of the form being validate.
  */
 function collection_management_form_validate($form, &$form_state) {
   if ($form_state['clicked_button']['#id'] == 'create_child') {
@@ -363,25 +365,19 @@ EOD;
 }
 
 /**
+ * This function is being kept around to fulfil an old API,
+ * The implementation has been moved to fedora_utils in the
+ * fedora_repository module
  *
- * @param unknown_type $pid
- * @return unknown
+ * @param string $pid
+ *   The PID to find the parents of.
+ *
+ * @return array
+ *   $object_PIDs the list of PIDs of the collections that the
+ *   indicated object is a member of.
  */
 function islandora_collections_get_collection_from_pid($pid) {
 
   module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
-  $query_string = 'select  $parent  from <#ri>
-		where ($object <fedora-rels-ext:isMemberOf> $parent
-    or $object <fedora-rels-ext:isMemberOfCollection> $parent)
-		and $object <dc:identifier> \'' . $pid . '\'
-		order by $object';
-
-  $query_string = htmlentities(urlencode($query_string));
-  $url = variable_get('fedora_repository_url', 'http://localhost:8080/fedora/risearch');
-  $url .= '?type=tuples&flush=true&format=csv&limit=13000&lang=itql&stream=on&query=' . $query_string;
-  $content = do_curl($url, TRUE);
-  $results = explode("\n", $content);
-  $object_pids = preg_replace('/^info:fedora\/|"parent"| /', '', $results);
-  $object_pids = array_values(array_filter($object_pids));
-  return $object_pids;
+  return get_parent_collections_from_pid($pid);
 }
