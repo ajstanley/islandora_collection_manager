@@ -1,10 +1,16 @@
 <?php
+/**
+ * @file
+ *  a set of utilities for collection management
+ */
 
 /**
- * collection creation form 
+ * collection creation form
+ *
  * @param array $form_state
  * @param string $parent_collection_pid
  * @param string $content_models
+ *
  * @return array
  */
 function collection_management_form(&$form_state, $this_collection_pid, $content_models) {
@@ -28,7 +34,6 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
   }
   $collection_namespace = substr($this_collection_pid, 0, strpos($this_collection_pid, ":"));
 
-  //$represented_content_models = get_represented_content_models($this_collection_pid);
   $item = new Fedora_Item($this_collection_pid);
   $collection_name = $item->objectProfile->objLabel;
   $new_content_models = get_content_models_as_option_array();
@@ -120,16 +125,19 @@ function collection_management_form(&$form_state, $this_collection_pid, $content
   $form['child_creation']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Create Collection'),
-    '#id' => 'create_child'
+    '#id' => 'create_child',
   );
 
   return($form);
 }
 
 /**
- * collection creation form validate 
+ * collection creation form validate
+ *
  * @param array $form
+ *   The form being validated.
  * @param array $form_state
+ *   The state of the form being validate.
  */
 function collection_management_form_validate($form, &$form_state) {
   if ($form_state['clicked_button']['#id'] == 'create_child') {
@@ -173,6 +181,7 @@ function collection_management_form_validate($form, &$form_state) {
 
 /**
  * collection creation form submit
+ *
  * @global user $user
  * @param arary $form
  * @param array $form_state
@@ -196,7 +205,7 @@ function collection_management_form_submit($form, &$form_state) {
 </collection_policy>';
 
 
-  // add child collection to policy
+  // Add child collection to policy.
   if ($form_state['clicked_button']['#id'] == 'create_child') {
     $module_path = drupal_get_path('module', 'fedora_repository');
     $thumbnail = drupal_get_path('module', 'Fedora_Repository') . '/images/Crystal_Clear_filesystem_folder_grey.png';
@@ -225,7 +234,7 @@ function collection_management_form_submit($form, &$form_state) {
   }
 
 
-  // add content model to collection policy
+  // Add content model to collection policy.
   if ($form_state['clicked_button']['#id'] == 'add_cm') {
     if (!$policy) {
       $item = new Fedora_Item($collection_pid);
@@ -240,7 +249,7 @@ function collection_management_form_submit($form, &$form_state) {
     drupal_set_message("Collection model successfully added");
   }
 
-  //remove content model from collection policy
+  // Remove content model from collection policy.
   if ($form_state['clicked_button']['#id'] == 'remove_cm') {
     $candidates = $form_state['values']['content_models_to_remove'];
     $count = 0;
@@ -260,7 +269,7 @@ function collection_management_form_submit($form, &$form_state) {
   }
 
 
-  //change content model on selected objects
+  // Change content model on selected objects.
   if ($form_state['clicked_button']['#id'] == 'change_model') {
     $current_content_model = $form_state['values']['current_content_model'];
     $new_content_model = $form_state['values']['new_content_model'];
@@ -308,7 +317,8 @@ function collection_management_form_submit($form, &$form_state) {
 }
 
 /**
- * deletes PID 
+ * deletes PID
+ *
  * @param string $pid
  */
 function delete_objects_as_batch($pid) {
@@ -320,7 +330,9 @@ function delete_objects_as_batch($pid) {
 
 /**
  * removes association of this object to this collection
+ *
  * @param string $pid
+ * @param string $collection_pid
  */
 function remove_collection_association($pid, $collection_pid) {
   module_load_include('inc', 'fedora_repository', 'api/fedora_item');
@@ -328,8 +340,10 @@ function remove_collection_association($pid, $collection_pid) {
   $item->purge_relationship('isMemberOfCollection', $collection_pid);
 }
 
-
-
+/**
+ *
+ * @param unknown_type $collection_pid
+ */
 function get_child_collections($collection_pid) {
 
   $query = <<<EOD
@@ -348,23 +362,4 @@ EOD;
   $lines = preg_replace('/info:fedora\/|"object"/', '', $results);
   $collection_pids = array_values(array_filter($lines));
   return $collection_pids;
-}
-
-function islandora_collections_get_collection_from_pid($pid) {
-
-  module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
-  $query_string = 'select  $parent  from <#ri>
-		where ($object <fedora-rels-ext:isMemberOf> $parent
-    or $object <fedora-rels-ext:isMemberOfCollection> $parent)
-		and $object <dc:identifier> \'' . $pid . '\'
-		order by $object';
-
-  $query_string = htmlentities(urlencode($query_string));
-  $url = variable_get('fedora_repository_url', 'http://localhost:8080/fedora/risearch');
-  $url .= '?type=tuples&flush=true&format=csv&limit=13000&lang=itql&stream=on&query=' . $query_string;
-  $content = do_curl($url, TRUE);
-  $results = explode("\n", $content);
-  $object_pids = preg_replace('/^info:fedora\/|"parent"| /', '', $results);
-  $object_pids = array_values(array_filter($object_pids));
-  return $object_pids;
 }
