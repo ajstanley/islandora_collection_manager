@@ -363,21 +363,3 @@ EOD;
   $collection_pids = array_values(array_filter($lines));
   return $collection_pids;
 }
-
-/**
- * This function is being kept around to fulfil an old API,
- * The implementation has been moved to fedora_utils in the
- * fedora_repository module
- *
- * @param string $pid
- *   The PID to find the parents of.
- *
- * @return array
- *   $object_PIDs the list of PIDs of the collections that the
- *   indicated object is a member of.
- */
-function islandora_collections_get_collection_from_pid($pid) {
-
-  module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
-  return get_parent_collections_from_pid($pid);
-}
