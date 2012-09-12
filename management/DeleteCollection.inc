@@ -83,9 +83,11 @@ function islandora_collection_deletion_form_submit($form, &$form_state) {
   global $user;
   module_load_include('inc', 'fedora_repository', 'api/fedora_item');
   module_load_include('inc', 'fedora_repository', 'api/fedora_collection');
+  module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
+
   $collection_pid = $form_state['values']['current'];
-  $parents = islandora_collections_get_collection_from_pid($collection_pid);
-  $collection_pid = $form_state['values']['current'];
+  $parents = get_parent_collections_from_pid($collection_pid);
+
   if ($form_state['values']['delete_root'] == 1) {
     delete_root_collection($collection_pid);
     drupal_goto("fedora/repository/" . $parents[0]);
