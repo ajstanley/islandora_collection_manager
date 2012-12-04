@@ -64,7 +64,7 @@ function get_collection_management_content($content_models, $pid) {
 
   $data = CollectionClass::getRelatedItems($pid);
   $xml = simplexml_load_string($data);
-  $results = $xml->results->result->count();
+  $results = count($xml->results->result);
 
   $list = array();
   $list[] = l(t('Create Child Collection'), "islandora/collection/management/new collection/$pid");
