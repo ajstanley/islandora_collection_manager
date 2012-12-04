@@ -32,9 +32,6 @@ function islandora_collection_table($collection_pid) {
     $keys[] = $line_parts[0];
   }
 
-  $form['list'] = array(
-    '#value' => $list,
-  );
 
   $table = array(
     '#header' => array(theme('table_select_header_cell'), 'Thumbnail', 'PID', 'Label'),

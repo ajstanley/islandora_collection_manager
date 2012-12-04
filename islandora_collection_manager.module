@@ -64,7 +64,7 @@ function get_collection_management_content($content_models, $pid) {
 
   $data = CollectionClass::getRelatedItems($pid);
   $xml = simplexml_load_string($data);
-  $results = $xml->results->result->count();
+  $results = count($xml->results->result);
 
   $list = array();
   $list[] = l(t('Create Child Collection'), "islandora/collection/management/new collection/$pid");
@@ -74,7 +74,7 @@ function get_collection_management_content($content_models, $pid) {
   }
   $list[] = l(t('Change Content Models'), "islandora/collection/management/change content model/$pid");
   $list[] = l(t('Add or Modify QUERY'), "islandora/collection/management/query/$pid");
-  if (user_access('delete entire collections')) {
+  if (user_access('delete entire collections')  && user_access('purge objects and datastreams')) {
     $list[] = l(t('Delete Members of this collection'), "islandora/collection/management/delete/$pid");
   }
   $extras = module_invoke_all('islandora_collection_mangement', $pid);

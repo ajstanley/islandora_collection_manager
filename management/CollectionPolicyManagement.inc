@@ -17,7 +17,7 @@ function collection_policy_management($form_state, $pid) {
   // place holder until we can establish a collection policy help file
 
   $form['help_link'] = array(
-    '#value' => l(t('About Collection Policies'), 'fedora/repository', $alink_options),
+    '#value' => l(t('About Collection Policies'), 'https://wiki.duraspace.org/display/ISLANDORA112/How+to+Manage+Collection+Policies', $alink_options),
   );
   $form['pid'] = array(
     '#type' => 'hidden',

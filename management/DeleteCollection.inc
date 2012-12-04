@@ -66,7 +66,7 @@ function islandora_collection_deletion_form(&$form_state, $pid) {
     '#value' => t($submit_text_message),
   );
 
-  if (user_access('delete entire collections')) {
+  if (user_access('delete entire collections') && user_access('purge objects and datastreams')) {
     return $form;
   }
 }
@@ -149,6 +149,7 @@ function delete_root_collection($pid) {
  *   The PID of the item to purge.
  */
 function collection_manager_delete($pid) {
+  global $user;
   module_load_include('inc', 'fedora_repository', 'api/fedora_item');
   $item = new Fedora_Item($pid);
   $item->purge("Purged by " . $user->name);
