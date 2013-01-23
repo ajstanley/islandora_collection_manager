@@ -13,6 +13,7 @@ function islandora_collection_table($collection_pid) {
   $query = "select \$object \$title from <#ri>
               where  (\$object <info:fedora/fedora-system:def/relations-external#isMemberOf> <info:fedora/$collection_pid>
               or \$object <info:fedora/fedora-system:def/relations-external#isMemberOfCollection> <info:fedora/$collection_pid>)
+              and \$object <fedora-model:state> <info:fedora/fedora-system:def/model#Active>
               and \$object <dc:title> \$title";
   $query = htmlentities(urlencode($query));
   $content = '';

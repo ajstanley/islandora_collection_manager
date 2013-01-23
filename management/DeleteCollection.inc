@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  *   Holds the code related to deleting objects/collections for this module.
@@ -23,9 +24,9 @@ function islandora_collection_deletion_form(&$form_state, $pid) {
   $table = islandora_collection_table($pid);
   $deletion_message = ($table) ? "Delete Members of this Collection" : "Delete Collection";
   $submit_text_message = ($table) ? "Delete Selected Objects" : "Delete Collection";
-    $path = drupal_get_path('module', 'islandora_collection_manager');
-    drupal_add_js($path . '/js/collection.js?stopcache');
-    drupal_add_css($path . '/css/collection.css');
+  $path = drupal_get_path('module', 'islandora_collection_manager');
+  drupal_add_js($path . '/js/collection.js?stopcache');
+  drupal_add_css($path . '/css/collection.css');
 
   $form = array();
 
@@ -37,6 +38,8 @@ function islandora_collection_deletion_form(&$form_state, $pid) {
   $form['collection_delete'] = array(
     '#title' => $deletion_message,
     '#type' => 'fieldset',
+    '#description' => t("if a selected item is a member of more than one collection, the relationship with this collection will be severed.<br />
+      If a selected item is a member of only this collection it will be <strong>permanently deleted.</strong>")
   );
 
   if ($table) {
@@ -94,7 +97,7 @@ function islandora_collection_deletion_form_submit($form, &$form_state) {
   }
 
   $child_collections = get_child_collections($collection_pid);
-
+  $current = $form_state['values']['current'];
   $populated_child_collections = array();
   $pids = @array_filter($form_state['values']['table']['selections']);
 
@@ -124,7 +127,7 @@ function islandora_collection_deletion_form_submit($form, &$form_state) {
   );
 
   foreach ($pids_to_delete as $pid_to_delete) {
-    $batch['operations'][] = array('collection_manager_delete', array($pid_to_delete));
+    $batch['operations'][] = array('collection_manager_delete', array($pid_to_delete, $collection_pid));
   }
   batch_set($batch);
 }
@@ -148,10 +151,17 @@ function delete_root_collection($pid) {
  * @param string $pid
  *   The PID of the item to purge.
  */
-function collection_manager_delete($pid) {
+function collection_manager_delete($pid, $collection_pid) {
   global $user;
   module_load_include('inc', 'fedora_repository', 'api/fedora_item');
   $item = new Fedora_Item($pid);
-  $item->purge("Purged by " . $user->name);
+  $relationships = $item->get_rdf_relationships();
+  $membership_count = count($relationships['fedora:isMemberOfCollection']);
+  if ($membership_count == 1) {
+    $item->purge("Purged by " . $user->name);
+  }
+  else {
+    $item->purge_relationship('isMemberOfCollection', $collection_pid);
+  }
   $item->forget();
 }
